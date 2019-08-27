@@ -1,0 +1,174 @@
+version: 2
+jobs:
+  feat_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "glbl"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -input=false | landscape
+  plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "glbl"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -input=false -out=tfm.plan | landscape
+      - persist_to_workspace:
+          root: ~/project/
+          paths:
+            - tfm.plan
+            - .terraform/*
+  apply:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "glbl"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - attach_workspace:
+          at: ~/project/
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: terraform apply -input=false -auto-approve tfm.plan
+workflows:
+  version: 2
+  plan_apply:
+    jobs:
+      - feat_plan:
+          context: terraform
+          filters:
+            branches:
+              ignore: master
+      - plan:
+          context: terraform
+          filters:
+            branches:
+              only: master
+      - hold:
+          type: approval
+          requires:
+            - plan       
+          filters:
+            branches:
+              only: master
+      - apply:
+          context: terraform
+          requires: 
+            - hold
+          filters:
+            branches:
+              only: master
+  

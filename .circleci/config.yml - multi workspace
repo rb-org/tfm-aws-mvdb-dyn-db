@@ -1,0 +1,535 @@
+version: 2
+jobs:
+  feat2dev_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "d188"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install aws cli
+          command: |
+            chmod +x .circleci/install_awscli.sh
+            .circleci/install_awscli.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -var-file=env/${WKSPC}.tfvars -input=false | landscape
+  dev_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "d188"
+    steps:
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -var-file=env/${WKSPC}.tfvars -input=false -out=tfm.plan | landscape
+      - persist_to_workspace:
+          root: ~/project/
+          paths:
+            - tfm.plan
+            - .terraform/*
+  dev_apply:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "d188"
+      RUN_WS_APPLY: "true"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - attach_workspace:
+          at: ~/project/
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: terraform apply -input=false -auto-approve tfm.plan
+  dev2uat_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "t166"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -var-file=env/${WKSPC}.tfvars -input=false | landscape
+  uat_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "t166"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -var-file=env/${WKSPC}.tfvars -input=false -out=tfm.plan | landscape
+      - persist_to_workspace:
+          root: ~/project/
+          paths:
+            - tfm.plan
+            - .terraform/*
+  uat_apply:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "t166"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - attach_workspace:
+          at: ~/project/
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: terraform apply -input=false -auto-approve tfm.plan
+  uat2prd_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "p112"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -var-file=env/${WKSPC}.tfvars -input=false | landscape
+  prd_plan:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "p112"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: install terraform-landscape
+          command: |
+            chmod +x .circleci/install_landscape.sh
+            .circleci/install_landscape.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: format
+          command: |
+            chmod +x .circleci/fmt.sh
+            .circleci/fmt.sh
+      - run: 
+          name: validate
+          command: |
+            chmod +x .circleci/validate.sh
+            .circleci/validate.sh
+      - run: 
+          name: lint
+          command: |
+            chmod +x .circleci/lint.sh
+            .circleci/lint.sh
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: 
+          name: plan
+          command: |
+            terraform plan -var-file=env/${WKSPC}.tfvars -input=false -out=tfm.plan | landscape
+      - persist_to_workspace:
+          root: ~/project/
+          paths:
+            - tfm.plan
+            - .terraform/*
+  prd_apply:
+    docker:
+      - image: hashicorp/terraform:light
+    environment: 
+      WKSPC: "p112"
+    steps:
+      - checkout
+      - run: 
+          name: update apk
+          command: apk update
+      - run:
+          name: install python
+          command: |
+            chmod +x .circleci/install_python.sh
+            .circleci/install_python.sh
+      - run:
+          name: export aws creds
+          command: |
+            chmod +x .circleci/export_aws.sh
+            .circleci/export_aws.sh
+      - attach_workspace:
+          at: ~/project/
+      - run: 
+          name: init
+          command: |
+            terraform init -input=false
+            if [ $? != "0" ]; then exit $?; fi
+      - run: 
+          name: select workspace
+          command: |
+            terraform workspace select $WKSPC
+      - run: terraform apply -input=false -auto-approve tfm.plan
+workflows:
+  version: 2
+  feat2dev:
+    jobs:
+      - feat2dev_plan:
+          context: terraform
+          filters:
+            branches:
+              ignore: 
+                - master
+                - uat
+                - dev    
+      - dev_plan:
+          context: terraform
+          filters: 
+            branches:
+              only: dev
+              ignore: 
+                - master
+                - uat   
+      - dev_apply:
+          requires: 
+            - dev_plan
+          context: terraform
+          filters: 
+            branches:
+              only: dev
+              ignore: 
+                - master
+                - uat
+ 
+  dev2uat:
+    jobs:
+      - dev2uat_plan:
+          context: terraform
+          filters:
+            branches:
+              only: dev  
+              ignore: 
+                - master
+                - uat
+                
+      - uat_plan:
+          context: terraform
+          filters:
+            branches:
+              only: uat   
+              ignore: 
+                - master
+                - dev         
+      - uat_apply:
+          requires: 
+            - uat_plan
+          context: terraform
+          filters:
+            branches:
+              only: uat
+              ignore: 
+                - master
+                - dev  
+  uat2prd:
+    jobs:
+    - uat2prd_plan:
+        context: terraform
+        filters:
+          branches:
+            only: uat
+            ignore: 
+              - master
+              - dev
+    - prd_plan:
+        context: terraform
+        filters:
+          branches:
+            only: master
+            ignore: 
+              - uat
+              - dev
+    - prd_hold:
+        context: terraform
+        type: approval
+        requires:
+          - prd_plan
+        filters:
+          branches:
+            only: master
+            ignore: 
+              - uat
+              - dev
+    - prd_apply:
+        context: terraform
+        requires: 
+          - prd_hold
+        filters:
+          branches:
+            only: master
+            ignore: 
+              - uat
+              - dev
