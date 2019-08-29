@@ -1,4 +1,4 @@
-variable "name_prefix" {
+variable "prefix" {
   default = "mvdb"
 }
 

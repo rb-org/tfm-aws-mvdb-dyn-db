@@ -1,7 +1,7 @@
 module "main" {
   source = "../../../../terraform/mods/terraform-aws-dynamo-db"
 
-  table_name     = "${var.name_prefix}-${terraform.workspace}-${var.table_name}"
+  table_name     = local.table_name
   billing_mode   = var.billing_mode
   hash_key       = var.hash_key
   range_key      = var.range_key
