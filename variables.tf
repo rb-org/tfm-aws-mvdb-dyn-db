@@ -26,10 +26,4 @@ variable "remote_state_s3_auto" {
   default     = "tfm-remote-state"
 }
 
-# Notifications
-
-variable "sns_slack_webhook" {
-  description = "Slack webhook for receiving SNS notification messages"
-  default     = "this should go in ssm params or pickup from local secrets"
-}
 

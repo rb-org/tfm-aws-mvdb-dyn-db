@@ -29,20 +29,20 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
       "dynamodb:ListBackups"
     ]
     effect    = "Allow"
-    resources = ["*"]
+    resources = [var.table_arn]
   }
 }
 
 
 
 resource "aws_iam_role" "lambda_role" {
-  name               = "${local.prefix}-lambda-role"
+  name               = "${local.lambda_name}-role"
   path               = "/"
   assume_role_policy = "${data.aws_iam_policy_document.lambda_assume_role_policy.json}"
 }
 
 resource "aws_iam_policy" "lambda_policy" {
-  name   = "${local.prefix}-lambda-policy"
+  name   = "${local.lambda_name}-policy"
   policy = "${data.aws_iam_policy_document.lambda_policy_doc.json}"
 }
 

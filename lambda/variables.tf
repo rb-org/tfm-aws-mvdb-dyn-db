@@ -5,3 +5,6 @@ variable "region" {}
 variable "create_backup" {
   default = false
 }
+variable "table_arn" {
+
+}
