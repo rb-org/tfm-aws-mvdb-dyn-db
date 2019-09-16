@@ -12,6 +12,7 @@ variable "default_tags" {
   default = {
     Github-Repo = "rb-org/mvdb-tfm-dyn-db"
     Terraform   = "true"
+    Creator     = "rupert"
   }
 }
 
